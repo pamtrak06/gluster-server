@@ -27,12 +27,35 @@ It's also available on dockerhub as `blang/gluster-server`.
 ## Bootstrap
 Servers need a setup with some manual steps.
 
+### Create a swarm cluster
+
+Create a swarn cluster with 2 nodes (see https://docs.docker.com/get-started/part4/)
+
+On the manager node, create a share network :
+```bash
+docker network create --attachable --driver overlay net-glust
+```
+
 ### On both servers
+
+on myvm1 :
 ```bash
 mkdir -p /data/glusterserver/data
 mkdir -p /data/glusterserver/metadata
 mkdir -p /data/glusterserver/etc
-cp hosts /data/glusterserver/etc/hosts
+cp /etc/hosts /data/glusterserver/etc/hosts
+echo gluster.core-1.mydomain > /etc/hostname
+echo "127.0.0.1 gluster.core-1.mydomain" >> /data/glusterserver/etc/hosts
+```
+
+on myvm2 :
+```bash
+mkdir -p /data/glusterserver/data
+mkdir -p /data/glusterserver/metadata
+mkdir -p /data/glusterserver/etc
+cp /etc/hosts /data/glusterserver/etc/hosts
+echo gluster.core-2.mydomain > /etc/hostname
+echo "127.0.0.1 gluster.core-2.mydomain" >> /data/glusterserver/etc/hosts
 ```
 
 Create self-reference in containers /etc/hosts for each file:
@@ -45,13 +68,13 @@ Replace %i with current host number. Otherwise gluster will not work.
 Start gluster server non-interactive since setup is done on core-1.
 
 ```bash
-docker run --privileged -v /data/glusterserver/data:/data -v /data/glusterserver/metadata:/var/lib/glusterd -v /data/glusterserver/etc/hosts:/etc/hosts -p 24007:24007 -p 24009:24009 -p 49152:49152 blang/gluster-server
+docker run --name gluster.core-2.mydomain --rm --privileged -v /data/glusterserver/data:/data -v /data/glusterserver/metadata:/var/lib/glusterd -v /data/glusterserver/etc/hosts:/etc/hosts -p 24007:24007 -p 24009:24009 -p 49152:49152 blang/gluster-server
 ```
 
 ### On core-1
 Start shell on core-1:
 ```bash
-docker run --privileged -v /data/glusterserver/data:/data -v /data/glusterserver/metadata:/var/lib/glusterd -v /data/glusterserver/etc/hosts:/etc/hosts -p 24007:24007 -p 24009:24009 -p 49152:49152 -i -t blang/gluster-server /bin/bash
+docker run --name gluster.core-2.mydomain --rm --privileged -v /data/glusterserver/data:/data -v /data/glusterserver/metadata:/var/lib/glusterd -v /data/glusterserver/etc/hosts:/etc/hosts -p 24007:24007 -p 24009:24009 -p 49152:49152 -i -t blang/gluster-server /bin/bash
 ```
 
 Inside the core-1 container:
