@@ -46,6 +46,7 @@ mkdir -p /data/glusterserver/etc
 cp /etc/hosts /data/glusterserver/etc/hosts
 echo gluster.core-1.mydomain > /etc/hostname
 echo "127.0.0.1 gluster.core-1.mydomain" >> /data/glusterserver/etc/hosts
+echo "X.X.X.X.  gluster.core-2.mydomain" >> /data/glusterserver/etc/hosts
 ```
 
 on myvm2 :
@@ -55,6 +56,7 @@ mkdir -p /data/glusterserver/metadata
 mkdir -p /data/glusterserver/etc
 cp /etc/hosts /data/glusterserver/etc/hosts
 echo gluster.core-2.mydomain > /etc/hostname
+echo "X.X.X.X.  gluster.core-1.mydomain" >> /data/glusterserver/etc/hosts
 echo "127.0.0.1 gluster.core-2.mydomain" >> /data/glusterserver/etc/hosts
 ```
 
