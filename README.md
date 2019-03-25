@@ -93,12 +93,14 @@ init 2
 Start gluster server non-interactive since setup is done on core-1.
 
 ```bash
+docker-machine ssh myvm2
 docker run --name gluster.core-2.mydomain --net=net-glusterfs --rm --privileged -v /data/glusterserver/data:/data -v /data/glusterserver/metadata:/var/lib/glusterd -v /data/glusterserver/etc/hosts:/etc/hosts -p 24007:24007 -p 24009:24009 -p 49152:49152 blang/gluster-server
 ```
 
 ### On core-1
 Start shell on core-1:
 ```bash
+docker-machine ssh myvm1
 docker run --name gluster.core-2.mydomain --net=net-glusterfs --rm --privileged -v /data/glusterserver/data:/data -v /data/glusterserver/metadata:/var/lib/glusterd -v /data/glusterserver/etc/hosts:/etc/hosts -p 24007:24007 -p 24009:24009 -p 49152:49152 -i -t blang/gluster-server /bin/bash
 ```
 
