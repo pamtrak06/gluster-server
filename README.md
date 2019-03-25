@@ -49,6 +49,14 @@ docker-machine ssh myvm1 "docker network create --attachable --driver overlay ne
 ### On both servers
 
 Initilialize two nodes with ths script initialize.sh:
+
+```bash
+# password is tcuser for user docker
+ssh-copy-id docker@$(docker-machine ip myvm1)
+ssh-copy-id docker@$(docker-machine ip myvm2)
+```
+
+
 ```bash
 #!/bin/bash
 function init() {
@@ -67,10 +75,7 @@ function init() {
   fi
   init=$(cat init.sh)
   if [ -n "$init" ]; then
-    echo "INFO: password is tcuser"
-    echo "INFO: execute ssh-copy-id docker@$(docker-machine ip myvm${index})..."
-    read
-    cmd="scp init.sh docker@$(docker-machine ssh myvm${index}):~/"
+    cmd="scp init.sh docker@$(docker-machine ip myvm${index}):~/"
     echo "INFO: execute: $cmd" && eval $cmd
     cmd="docker-machine ssh myvm${index} \"chmod 755 ~/init.sh\""
     echo "INFO: execute: $cmd" && eval $cmd
