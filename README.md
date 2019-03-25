@@ -31,22 +31,57 @@ Servers need a setup with some manual steps.
 
 Create a swarn cluster with 2 nodes (see https://docs.docker.com/get-started/part4/)
 
+```bash
+docker-machine create --driver virtualbox myvm1
+docker-machine create --driver virtualbox myvm2
+```
+```bash
+docker-machine ssh myvm1 "docker swarm init --advertise-addr $(docker-machine ip myvm1)"
+export token=$(docker-machine ssh myvm1 "docker swarm join-token manager|grep token")
+docker-machine ssh myvm2 "eval $token"
+```
+
 On the manager node, create a share network :
 ```bash
-docker network create --attachable --driver overlay net-glusterfs
+docker-machine ssh myvm1 "docker network create --attachable --driver overlay net-glusterfs"
 ```
 
 ### On both servers
 
-on myvm1 :
+Initilialize two nodes with ths script initialize.sh:
 ```bash
-mkdir -p /data/glusterserver/data
-mkdir -p /data/glusterserver/metadata
-mkdir -p /data/glusterserver/etc
-cp /etc/hosts /data/glusterserver/etc/hosts
-echo gluster.core-1.mydomain > /etc/hostname
-echo "127.0.0.1 gluster.core-1.mydomain" >> /data/glusterserver/etc/hosts
-echo "X.X.X.X.  gluster.core-2.mydomain" >> /data/glusterserver/etc/hosts
+#!/bin/bash
+function init() {
+  index=$1
+  echo "mkdir -p /data/glusterserver/data;" > init.sh
+  echo "mkdir -p /data/glusterserver/metadata;" >> init.sh
+  echo "mkdir -p /data/glusterserver/etc;" >> init.sh
+  echo "cp /etc/hosts /data/glusterserver/etc/hosts;" >> init.sh
+  echo "echo gluster.core-1.mydomain > /etc/hostname;" >> init.sh
+  if [ $index = 1 ]; then
+    echo "echo \"127.0.0.1 gluster.core-$index.mydomain\" >> /data/glusterserver/etc/hosts;" >> init.sh
+    echo "echo \"$(docker-machine ip myvm2)  gluster.core-2.mydomain\" >> /data/glusterserver/etc/hosts;" >> init.sh
+  else
+    echo "echo \"127.0.0.1 gluster.core-$index.mydomain\" >> /data/glusterserver/etc/hosts;" >> init.sh
+    echo "echo \"$(docker-machine ip myvm1)  gluster.core-2.mydomain\" >> /data/glusterserver/etc/hosts;" >> init.sh
+  fi
+  init=$(cat init.sh)
+  if [ -n "$init" ]; then
+    echo "INFO: password is tcuser"
+    echo "INFO: execute ssh-copy-id docker@$(docker-machine ip myvm${index})..."
+    read
+    cmd="scp init.sh docker@$(docker-machine ssh myvm${index}):~/"
+    echo "INFO: execute: $cmd" && eval $cmd
+    cmd="docker-machine ssh myvm${index} \"chmod 755 ~/init.sh\""
+    echo "INFO: execute: $cmd" && eval $cmd
+    echo "INFO: execute sudo -s and then ./init.sh"
+    docker-machine ssh myvm${index}
+  else
+    echo "ERROR; init is empty"
+  fi
+}
+init 1
+init 2
 ```
 
 on myvm2 :
