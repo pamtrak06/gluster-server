@@ -89,23 +89,6 @@ init 1
 init 2
 ```
 
-on myvm2 :
-```bash
-mkdir -p /data/glusterserver/data
-mkdir -p /data/glusterserver/metadata
-mkdir -p /data/glusterserver/etc
-cp /etc/hosts /data/glusterserver/etc/hosts
-echo gluster.core-2.mydomain > /etc/hostname
-echo "X.X.X.X.  gluster.core-1.mydomain" >> /data/glusterserver/etc/hosts
-echo "127.0.0.1 gluster.core-2.mydomain" >> /data/glusterserver/etc/hosts
-```
-
-Create self-reference in containers /etc/hosts for each file:
-```bash
-echo "127.0.0.1 gluster.core-%i.mydomain" >> /data/glusterserver/etc/hosts
-```
-Replace %i with current host number. Otherwise gluster will not work.
-
 ### On core-2
 Start gluster server non-interactive since setup is done on core-1.
 
