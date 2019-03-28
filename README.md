@@ -71,7 +71,7 @@ function init() {
     echo "echo \"$(docker-machine ip myvm2)  gluster.core-2.mydomain\" >> /data/glusterserver/etc/hosts;" >> init.sh
   else
     echo "echo \"127.0.0.1 gluster.core-$index.mydomain\" >> /data/glusterserver/etc/hosts;" >> init.sh
-    echo "echo \"$(docker-machine ip myvm1)  gluster.core-2.mydomain\" >> /data/glusterserver/etc/hosts;" >> init.sh
+    echo "echo \"$(docker-machine ip myvm1)  gluster.core-1.mydomain\" >> /data/glusterserver/etc/hosts;" >> init.sh
   fi
   init=$(cat init.sh)
   if [ -n "$init" ]; then
@@ -95,6 +95,7 @@ Start gluster server non-interactive since setup is done on core-1.
 ```bash
 docker-machine ssh myvm2
 docker run --name gluster.core-2.mydomain --net=net-glusterfs --rm --privileged -v /data/glusterserver/data:/data -v /data/glusterserver/metadata:/var/lib/glusterd -v /data/glusterserver/etc/hosts:/etc/hosts -p 24007:24007 -p 24009:24009 -p 49152:49152 blang/gluster-server
+docker exec -it gluster.core-2.mydomain glusterd && gluster peer probe gluster.core-1.mydomain
 ```
 
 ### On core-1
@@ -102,6 +103,9 @@ Start shell on core-1:
 ```bash
 docker-machine ssh myvm1
 docker run --name gluster.core-2.mydomain --net=net-glusterfs --rm --privileged -v /data/glusterserver/data:/data -v /data/glusterserver/metadata:/var/lib/glusterd -v /data/glusterserver/etc/hosts:/etc/hosts -p 24007:24007 -p 24009:24009 -p 49152:49152 -i -t blang/gluster-server /bin/bash
+docker exec -it gluster.core-1.mydomain glusterd && gluster peer probe gluster.core-2.mydomain
+docker exec -it gluster.core-1.mydomain --mode=script volume create datastore replica 2 gluster.core-1.mydomain:/data/datastore gluster.core-2.mydomain:/data/datastore force
+docker exec -it gluster.core-1.mydomain gluster volume start datastore
 ```
 
 Inside the core-1 container:
@@ -119,7 +123,7 @@ glusterd
 gluster peer probe gluster.core-2.mydomain
 
 # create volume 'datastore'
-gluster --mode=script volume create datastore replica 2 gluster.core-1.mydomain:/data/datastore gluster.core-2.mydomain:/data/datastore
+gluster --mode=script volume create datastore replica 2 gluster.core-1.mydomain:/data/datastore gluster.core-2.mydomain:/data/datastore force
 
 # start volume
 gluster volume start datastore
