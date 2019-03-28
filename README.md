@@ -140,13 +140,38 @@ Stop both containers now, if everything was successful, your containers are read
 ## Production
 Run on each server:
 
+on myvm1:
 ```bash
 docker run -d --privileged --rm --name gluster.core-1.mydomain --net=net-glusterfs -v /data/glusterserver/data:/data -v /data/glusterserver/metadata:/var/lib/glusterd -v /data/glusterserver/etc/hosts:/etc/hosts -p 24007:24007 -p 24009:24009 -p 49152:49152 blang/gluster-server
+docker exec -it gluster.core-1.mydomain bash
+> glusterd && gluster peer probe gluster.core-2.mydomain
+> gluster --mode=script volume create datastore replica 2 gluster.core-1.mydomain:/data/datastore gluster.core-2.mydomain:/data/datastore force
+> gluster volume start datastore
+> gluster volume status
+> gluster volume info
+> tail -f /var/log/glusterfs/glusterd.log
+> mount -t glusterfs gluster.core-1.mydomain:datastore /mnt
+> watch "ls -la /mnt| wc -l"
 ```
 
+on myvm2:
 ```bash
 docker run -d --privileged --rm --name gluster.core-2.mydomain --net=net-glusterfs -v /data/glusterserver/data:/data -v /data/glusterserver/metadata:/var/lib/glusterd -v /data/glusterserver/etc/hosts:/etc/hosts -p 24007:24007 -p 24009:24009 -p 49152:49152 blang/gluster-server
+docker exec -it gluster.core-1.mydomain bash
+> glusterd && gluster peer probe gluster.core-1.mydomain
+> gluster --mode=script volume create datastore replica 2 gluster.core-1.mydomain:/data/datastore gluster.core-2.mydomain:/data/datastore force
+> gluster volume start datastore
+> gluster volume status
+> gluster volume info
+> tail -f /var/log/glusterfs/glusterd.log
+> mount -t glusterfs gluster.core-2.mydomain:datastore /mnt
+> for i in `seq -w 1 100`; do cp -rp /var/log/glusterfs/cli.log /mnt/copy-test-$i; done
 ```
 
 Both server will connect to each other and heal automatically.
 If you need to interact with the gluster interface later, start one of those servers in shell mode, start `glusterd` and use `gluster help`.
+
+## Documentation
+
+
+https://gluster.readthedocs.io/en/latest/Quick-Start-Guide/Quickstart/#installing-glusterfs-a-quick-start-guide
